@@ -1,0 +1,56 @@
+@page "/account_list"
+
+@inject ShopClient _client
+@inject IToastService _toastService
+@inherits AppComponentBase
+<h3>Список аккаунтов</h3>
+@if (_accounts is not null)
+{
+    <table>
+        <thead>
+            <tr>
+                <th style="padding:15px;">ID</th>
+                <th style="padding:15px;">Email</th>
+                <th style="padding:15px;">Login</th>
+            </tr>
+        </thead>
+        <tbody>
+            @foreach (var item in _accounts)
+            {
+                <tr>
+                    <td style="padding:15px;">@item.Id</td>
+                    <td style="padding:15px;">@item.Email</td>
+                    <td style="padding:15px;">@item.Login</td>
+                </tr>
+            }
+        </tbody>
+    </table>
+}
+else
+{
+    <i>Загрузка...</i>
+}
+
+
+@code
+{
+    private IReadOnlyList<Account>? _accounts;
+
+    protected override async Task OnInitializedAsync()
+    {
+        await base.OnInitializedAsync();
+
+        try
+        {
+            var response = await _client.GetAllAccounts();
+            if (response is not null)
+                _accounts = response.Result;
+            else
+                _toastService.ShowError("Не удалось загрузить список аккаунтов.", "Ошибка!");
+        }
+        catch (HttpRequestException)
+        {
+            _toastService.ShowError("Не удалось загрузить список аккаунтов.", "Ошибка!");
+        }
+    }
+}

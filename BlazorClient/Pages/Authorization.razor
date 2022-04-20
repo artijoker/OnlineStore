@@ -1,0 +1,53 @@
+@page "/authorization"
+
+
+@inject IToastService _toastService
+@inject ShopClient _client
+@inject NavigationManager _navigationManager
+@inject ILocalStorageService _localStorage;
+<h3>Авторизация пользователя</h3>
+
+<EditForm Model="_model" OnValidSubmit="AccountAuthorization">
+    <DataAnnotationsValidator />
+    <div>Логин*:</div>
+    <div class="row">
+        <InputText class="col-4" @bind-Value="_model.Login" required/>
+    </div>
+    <div class="mt-3">Пароль*:</div>
+    <div class="row">
+        <InputText class="col-4" @bind-Value="_model.Password" required />
+    </div>
+    <div class="row mt-3">
+        <input class="col-2" type="submit" name="submit" value="Вход" />
+    </div>
+
+    <ValidationSummary />
+
+</EditForm>
+
+
+@code {
+    private readonly AccountLogInModel _model = new();
+
+    private async void AccountAuthorization()
+    {
+        var responseModel = await _client.LogIn(_model);
+        ;
+        if (responseModel is not null)
+        {
+            if (responseModel.Succeeded)
+            {
+                var confirmationCodeModel = responseModel.Result;
+                _toastService.ShowInfo("Отправлен на почту", "Код подтверждения");
+                _navigationManager.NavigateTo($"/confirm_code/{confirmationCodeModel!.Id}");
+            }
+            else
+                _toastService.ShowError(responseModel.Message, "Ошибка!");
+        }
+        else
+            _toastService.ShowError(
+                "Нет ответа от сервера. Попробуйте презагрузить страницу", 
+                "Ошибка!"
+            );
+    }
+}

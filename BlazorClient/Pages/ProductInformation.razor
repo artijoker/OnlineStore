@@ -1,0 +1,53 @@
+@page "/product_information/{ProductId:guid}"
+
+@inject ShopClient _client
+
+<PageTitle>ProductInformation</PageTitle>
+
+<h3>Информация о продукте</h3>
+
+@if (Product is not null)
+{
+    <div class="row">
+        <div class="col-4">
+            @{
+                if (Product.UrlImage is not null)
+                {
+                    <img src="@Product.UrlImage" width="350" alt="None">
+                }
+            }
+        </div>
+        <div class="col">
+            <div class="row fw-bold">ID:</div>
+            <div class="row">@Product.Id</div>
+
+            <div class="row mt-4 fw-bold">Название:</div>
+            <div class="row">@Product.Name</div>
+
+            <div class="row mt-4 fw-bold">Категория:</div>
+            <div class="row">@Product.Category?.Name</div>
+
+            <div class="row mt-4 fw-bold">Цена:</div>
+            <div class="row">@Product.Price</div>
+
+            <div class="row mt-4 fw-bold">Количество:</div>
+            <div class="row">@Product.Quantity</div>
+        </div>
+    </div>
+}
+else
+{
+    <i>Загрузка...</i>
+}
+@code {
+    [Parameter]
+    public Guid ProductId { get; set; }
+
+    private Product? Product { get; set; }
+
+    protected override async Task OnInitializedAsync()
+    {
+        await base.OnInitializedAsync();
+        Product = await _client.GetProductById(ProductId);
+    }
+}

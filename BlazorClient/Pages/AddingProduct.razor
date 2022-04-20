@@ -1,0 +1,75 @@
+@page "/adding_product"
+
+@inject ShopClient _client
+@inject IToastService _toastService
+
+<h3>Добавление товара</h3>
+@if (_categories is not null)
+{
+    <EditForm Model="_model" OnValidSubmit="AddNewProduct">
+        <DataAnnotationsValidator />
+        <div>Название*:</div>
+        <div class="row">
+            <InputText class="col-4" @bind-Value="_model.Name" required minlength="5" />
+        </div>
+        <div class="mt-3">Категория*:</div>
+        <div class="row">
+            <InputSelect class="col-4 p-1" @bind-Value="_model.CategoryId" required="required">
+                @foreach (var category in _categories)
+                {
+                <option value="@category.Id">@category.Name</option>
+                }
+        </InputSelect>
+    </div>
+    <div class="mt-3">Цена*:</div>
+    <div class="row">
+        <InputNumber class="col-4" @bind-Value="_model.Price" step="0.001" required />
+    </div>
+    <div class="mt-3">Количество*:</div>
+    <div class="row">
+        <InputNumber class="col-4" @bind-Value="_model.Quantity" required />
+    </div>
+    <div class="mt-3">URL изображения:</div>
+    <div class="row">
+        <InputText class="col-4" @bind-Value="_model.UrlImage" />
+    </div>
+    <div class="row mt-3">
+        <input class="col-1" type="submit" name="submit" value="Создать" />
+    </div>
+
+    <ValidationSummary />
+
+</EditForm>
+}
+else
+{
+    <i>Загрузка...</i>
+}
+
+@code {
+    private IReadOnlyList<Category>? _categories;
+    private readonly Product _model = new();
+
+    private async void AddNewProduct()
+    {
+        _toastService.ShowInfo("Данные отправлены на сервер.", "Отправка данных");
+        using var responseMessage = await _client.AddProduct(_model);
+        if (responseMessage.StatusCode == System.Net.HttpStatusCode.OK)
+            _toastService.ShowInfo("Товар добавлен в каталог", "Добавление товара");
+        else
+            _toastService.ShowError("Не удалось добавить товар.", "Ошибка!");
+    }
+
+    protected override async Task OnInitializedAsync()
+    {
+        await base.OnInitializedAsync();
+        try
+        {
+            _categories = await _client.GetCategories();
+        }
+        catch(HttpRequestException)
+        {
+            _toastService.ShowError("Не удалось загрузить список категорий.", "Ошибка!");
+        }
+    }
+}

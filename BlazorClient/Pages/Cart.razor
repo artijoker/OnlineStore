@@ -1,0 +1,160 @@
+@page "/cart"
+
+@inject IToastService _toastService
+@inherits AppComponentBase
+
+<PageTitle>Cart</PageTitle>
+<h3>Корзина</h3>
+@if (_isOrder)
+{
+    <h4>Ваш заказ</h4>
+    <table>
+        <thead>
+            <tr>
+                <th></th>
+                <th style="padding:15px;">Название</th>
+                <th style="padding:15px;">Категория</th>
+                <th style="padding:15px; text-align:right;">Цена за 1 шт</th>
+                <th style="padding:15px; text-align:right;">Количество</th>
+                <th></th>
+            </tr>
+        </thead>
+        <tbody>
+            @foreach (var item in _orderedProducts!)
+            {
+                <tr>
+                    <ProductItem Product="item.Product" />
+                    <td style="padding:15px" class="textPositionRight">@item.Quantity</td>
+                </tr>
+            }
+        </tbody>
+    </table>
+    <h4>Общая сумма заказа @_sum</h4>
+}
+else
+{
+    @if (_products is not null)
+    {
+        @if (_products.Count > 0)
+        {
+            <button class="btn" @onclick="@(() => CreateOrder())">
+                Оформить заказ
+            </button>
+            <table>
+                <thead>
+                    <tr>
+                        <th></th>
+                        <th style="padding:15px;">Название</th>
+                        <th style="padding:15px;">Категория</th>
+                        <th style="padding:15px; text-align:right;">Цена</th>
+                        <th style="padding:15px; text-align:right;">Количество</th>
+                        <th></th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @foreach (var item in _products)
+                    {
+
+                        <tr>
+                            <ProductItem Product="item.Product" />
+                            <td style="padding:15px" class="textPositionRight">@item.Quantity</td>
+
+                        </tr>
+
+
+                    }
+                </tbody>
+            </table>
+        }
+        else
+        {
+            <p>Пусто</p>
+        }
+    }
+    else
+    {
+        <i>Загрузка...</i>
+    }
+}
+
+
+
+@code
+{
+    private IReadOnlyList<CartItem>? _products;
+    private IReadOnlyList<OrderItem>? _orderedProducts;
+    private decimal _sum = 0;
+    private bool _isOrder = false;
+    protected override async Task OnInitializedAsync()
+    {
+        await base.OnInitializedAsync();
+
+        try
+        {
+            var response = await ShopClient.GetCart();
+
+            if (response is not null)
+            {
+                if (response.Succeeded)
+                {
+                    _products = response.Result!.CartItems!.ToList();
+                }
+                else
+                {
+                    _toastService.ShowError(
+                        "Не удалось загрузить корзину. Попробуйте презагрузить страницу",
+                        "Ошибка!"
+                    );
+                }
+            }
+            else
+            {
+                _toastService.ShowError(
+                    "Нет ответа от сервера. Попробуйте презагрузить страницу",
+                    "Ошибка!"
+                );
+            }
+        }
+        catch (HttpRequestException)
+        {
+            _toastService.ShowError("Для просмотра корзины нужно быть авторизованным.", "Ошибка!");
+        }
+    }
+
+    private async Task CreateOrder()
+    {
+        try
+        {
+            var response = await ShopClient.CreateOrder();
+
+            if (response is not null)
+            {
+                if (response.Succeeded)
+                {
+                    _products = null;
+                    _orderedProducts = response.Result!.OrderItems.ToList();
+                    _sum = _orderedProducts.Sum(item => item.Product!.Price * item.Quantity);
+                    _isOrder = true;
+                }
+                else
+                {
+                    _toastService.ShowError(
+                        response.Message,
+                        "Ошибка!"
+                    );
+                }
+            }
+            else
+            {
+                _toastService.ShowError(
+                    "Нет ответа от сервера. Попробуйте презагрузить страницу",
+                    "Ошибка!"
+                );
+            }
+        }
+        catch (HttpRequestException)
+        {
+            _toastService.ShowError("Для просмотра корзины нужно быть авторизованным.", "Ошибка!");
+        }
+    }
+}

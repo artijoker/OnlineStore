@@ -1,0 +1,52 @@
+@page "/confirm_code/{ConfirmationCodeId:guid}"
+
+
+@inject IToastService _toastService
+@inject ShopClient _client
+@inject NavigationManager _navigationManager
+@inject ILocalStorageService _localStorage;
+
+<h3>Введите код подтверждения</h3>
+<EditForm Model="_model" OnValidSubmit="AccountAuthorization">
+    <DataAnnotationsValidator />
+    <div>Код подтверждения*:</div>
+    <div class="row">
+        <InputText class="col-4" @bind-Value="_model.Code" required/>
+    </div>
+    <div class="row mt-3">
+        <input class="col-2" type="submit" name="submit" value="Вход" />
+    </div>
+
+    <ValidationSummary />
+
+</EditForm>
+@code {
+    [Parameter]
+    public Guid ConfirmationCodeId { get; set; }
+
+    private readonly ConfirmationCodeModel _model = new();
+
+    private async void AccountAuthorization()
+    {
+        _model.Id = ConfirmationCodeId;
+
+        var responseModel = await _client.СonfirmСode(_model);
+
+        if (responseModel is not null)
+        {
+            if (responseModel.Succeeded)
+            {
+                _toastService.ShowSuccess("Вы успешно авторизировались", "Успех!");
+                await _localStorage.SetItemAsync("AuthorizationToken", responseModel.Token);
+                _navigationManager.NavigateTo("/account_information");
+            }
+            else
+                _toastService.ShowError(responseModel.Message, "Ошибка!");
+        }
+        else
+            _toastService.ShowError(
+                "Нет ответа от сервера. Попробуйте презагрузить страницу", 
+                "Ошибка!"
+            );
+    }
+}

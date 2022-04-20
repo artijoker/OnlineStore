@@ -1,0 +1,60 @@
+@inherits LayoutComponentBase
+@implements IDisposable
+@inject IClock _clock
+
+<div class="page">
+    <div class="sidebar">
+        <NavMenu />
+    </div>
+
+    <main>
+        <div class="top-row px-4">
+             @if (@_stock is not null)
+            {
+                <div class="mx-auto ">@_stock</div>
+            }
+            <a href="https://docs.microsoft.com/aspnet/" target="_blank">About</a>
+        </div>
+
+        <article class="content px-4">
+            @Body
+        </article>
+    </main>
+</div>
+
+<BlazoredToasts Position="ToastPosition.TopRight"
+                Timeout="2"
+                IconType="IconType.FontAwesome"
+                ShowCloseButton="true"
+                MaxToastCount="3" />
+
+@code
+{
+    private PeriodicTimer _timer = new(TimeSpan.FromSeconds(1));
+    private DateTime _timerEnd = DateTime.Today.AddDays(1);
+    private string? _stock;
+
+    protected override async Task OnInitializedAsync()
+    {
+        await base.OnInitializedAsync();
+        if(_clock.GetClock().DayOfWeek == DayOfWeek.Wednesday)
+        _ = StartTimer();
+    }
+
+    private async Task StartTimer()
+    {
+
+        while (await _timer.WaitForNextTickAsync())
+        {
+            var time = _timerEnd - DateTime.Now;
+            _stock = $"Осталось до окончания акции {time.Hours:d2}:{time.Minutes:d2}:{time.Seconds:d2}";
+            StateHasChanged();
+            
+        }
+    }
+
+    public void Dispose()
+    {
+        _timer.Dispose();
+    }
+}

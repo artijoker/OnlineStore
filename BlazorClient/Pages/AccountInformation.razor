@@ -1,0 +1,48 @@
+@page "/account_information"
+
+@inject ShopClient _client
+@inject IToastService _toastService
+@inherits AppComponentBase
+
+<h3>Информация о пользователе</h3>
+
+@if (_account is not null)
+{
+    <b>Email:</b>
+    <div style="padding:15px;">@_account.Email</div>
+
+    <b>Login:</b>
+    <div style="padding:15px;">@_account.Login</div>
+}
+else
+{
+    <i>Загрузка...</i>
+}
+
+
+
+@code
+{
+    private Account? _account;
+
+    protected override async Task OnInitializedAsync()
+    {
+        await base.OnInitializedAsync();
+
+        try
+        {
+            var response = await _client.GetAccount();
+            if (response is not null)
+                _account = response.Result;
+            else
+                _toastService.ShowError(
+                "Нет ответа от сервера. Попробуйте презагрузить страницу",
+                "Ошибка!"
+                );
+        }
+        catch (HttpRequestException)
+        {
+            _toastService.ShowError("Для просмотра аккаунта нужно быть авторизованным.", "Ошибка!");
+        }
+    }
+}

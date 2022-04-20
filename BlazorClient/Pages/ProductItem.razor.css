@@ -1,0 +1,16 @@
+tbody td {
+    padding: 15px;
+}
+
+.textPositionRight {
+    text-align: right;
+}
+
+.goTo {
+    color: #0026ff;
+}
+
+    .goTo:hover {
+        color: #000044;
+        cursor: pointer;
+    }
